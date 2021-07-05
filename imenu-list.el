@@ -253,12 +253,19 @@ See `hs-minor-mode' for information on what is hide/show."
         (goto-char pos)
         (hs-toggle-hiding)))))
 
-(defun imenu-list--insert-entry (entry depth)
+(defvar-local imenu-list-num-mode nil)
+
+(defun imenu-list--format-entry (str numbering alist-p)
+  (when imenu-list-num-mode
+    (setq str (format "%s %s" (mapconcat #'number-to-string (reverse numbering) ".") str)))
+  (if alist-p (format "+ %s" str) (format "%s" str)))
+
+(defun imenu-list--insert-entry (entry depth numbering)
   "Insert a line for ENTRY with DEPTH."
   (if (imenu--subalist-p entry)
       (progn
         (insert (imenu-list--depth-string depth))
-        (insert-button (format "+ %s" (car entry))
+        (insert-button (imenu-list--format-entry (car entry) numbering t)
                        'face (imenu-list--get-face depth t)
                        'help-echo (format "Toggle: %s"
                                           (car entry))
@@ -267,7 +274,7 @@ See `hs-minor-mode' for information on what is hide/show."
                        #'imenu-list--action-toggle-hs)
         (insert "\n"))
     (insert (imenu-list--depth-string depth))
-    (insert-button (format "%s" (car entry))
+    (insert-button (imenu-list--format-entry (car entry) numbering nil)
                    'face (imenu-list--get-face depth nil)
                    'help-echo (format "Go to: %s"
                                       (car entry))
@@ -275,16 +282,20 @@ See `hs-minor-mode' for information on what is hide/show."
                    'action #'imenu-list--action-goto-entry)
     (insert "\n")))
 
-(defun imenu-list--insert-entries-internal (index-alist depth)
+(defun imenu-list--insert-entries-internal (index-alist depth &optional numbering)
   "Insert all imenu entries in INDEX-ALIST into the current buffer.
 DEPTH is the depth of the code block were the entries are written.
+NUMBERING is a list of integers numbering the entry.
 Each entry is inserted in its own line.
 Each entry is appended to `imenu-list--line-entries' as well."
-  (dolist (entry index-alist)
-    (setq imenu-list--line-entries (cons entry imenu-list--line-entries))
-    (imenu-list--insert-entry entry depth)
-    (when (imenu--subalist-p entry)
-      (imenu-list--insert-entries-internal (cdr entry) (1+ depth)))))
+  (let ((i 1) p)
+    (dolist (entry index-alist)
+      (setq imenu-list--line-entries (cons entry imenu-list--line-entries))
+      (setq p (cons i numbering)
+            i (1+ i))
+      (imenu-list--insert-entry entry depth p)
+      (when (imenu--subalist-p entry)
+        (imenu-list--insert-entries-internal (cdr entry) (1+ depth) p)))))
 
 (defun imenu-list-insert-entries ()
   "Insert all imenu entries into the current buffer.
@@ -296,6 +307,8 @@ function)."
   (let ((inhibit-read-only t))
     (erase-buffer)
     (setq imenu-list--line-entries nil)
+    (setq imenu-list-num-mode
+          (buffer-local-value 'imenu-list-num-mode imenu-list--displayed-buffer))
     (imenu-list--insert-entries-internal imenu-list--imenu-entries 0)
     (setq imenu-list--line-entries (nreverse imenu-list--line-entries))))
 
