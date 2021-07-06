@@ -430,14 +430,14 @@ continue with the regular logic to find a translator function."
 
 (defun imenu-list--show-current-entry ()
   "Move the imenu-list buffer's point to the current position's entry."
-  (when (get-buffer-window (imenu-list-get-buffer-create))
-    (let ((line-number (cl-position (imenu-list--current-entry)
-                                    imenu-list--line-entries
-                                    :test 'equal)))
-      (with-selected-window (get-buffer-window (imenu-list-get-buffer-create))
-        (goto-char (point-min))
-        (forward-line line-number)
-        (hl-line-mode 1)))))
+  (when-let ((win (get-buffer-window (imenu-list-get-buffer-create) 'visible))
+             (line-number (cl-position (imenu-list--current-entry)
+                                       imenu-list--line-entries
+                                       :test 'equal)))
+    (with-selected-window win
+      (goto-char (point-min))
+      (forward-line line-number)
+      (hl-line-mode 1))))
 
 ;;; window display settings
 
@@ -552,7 +552,8 @@ imenu entries did not change since the last update."
       (unless (and (null force-update)
                    imenu-list--last-location
                    (marker-buffer imenu-list--last-location)
-                   (= location imenu-list--last-location))
+                   (= location imenu-list--last-location)
+                   (get-buffer-window imenu-list-buffer-name 'visible))
         (setq imenu-list--last-location location)
         (condition-case err
             (imenu-list-collect-entries)
