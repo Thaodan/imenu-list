@@ -552,7 +552,7 @@ imenu entries did not change since the last update."
       (unless (and (null force-update)
                    imenu-list--last-location
                    (marker-buffer imenu-list--last-location)
-                   (= location imenu-list--last-location)
+                   (equal location imenu-list--last-location)
                    (get-buffer-window imenu-list-buffer-name 'visible))
         (setq imenu-list--last-location location)
         (condition-case err
