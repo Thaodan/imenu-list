@@ -1,4 +1,4 @@
-;;; imenu-list.el --- Show imenu entries in a separate buffer
+;;; imenu-list.el --- Show imenu entries in a separate buffer -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015-2021 Bar Magal & Contributors
 
@@ -46,6 +46,11 @@
 (require 'imenu)
 (require 'cl-lib)
 (require 'hideshow)
+(require 'which-func nil t)
+
+(unless (boundp 'which-func-update-delay)
+    (defalias which-func-update-delay 'idle-update-delay))
+
 
 (defconst imenu-list-buffer-name "*Ilist*"
   "Name of the buffer that is used to display imenu entries.")
@@ -430,7 +435,7 @@ continue with the regular logic to find a translator function."
 
 (defun imenu-list--show-current-entry ()
   "Move the imenu-list buffer's point to the current position's entry."
-  (when-let ((win (get-buffer-window (imenu-list-get-buffer-create) 'visible))
+  (when-let* ((win (get-buffer-window (imenu-list-get-buffer-create) 'visible))
              (line-number (cl-position (imenu-list--current-entry)
                                        imenu-list--line-entries
                                        :test 'equal)))
@@ -555,7 +560,7 @@ imenu entries did not change since the last update."
                    (equal location imenu-list--last-location)
                    (get-buffer-window imenu-list-buffer-name 'visible))
         (setq imenu-list--last-location location)
-        (condition-case err
+        (condition-case _err
             (imenu-list-collect-entries)
           (imenu-unavailable (if imenu-list-persist-when-imenu-index-unavailable
                                  (throw 'index-failure nil)
@@ -667,7 +672,7 @@ If `imenu-list-minor-mode' is already disabled, just call `quit-window'."
   (push `(imenu-list-major-mode "\\s-*\\+ " "\\s-*\\+ " ,comment-start imenu-list-forward-sexp nil)
         hs-special-modes-alist))
 
-(defun imenu-list-forward-sexp (&optional arg)
+(defun imenu-list-forward-sexp (&optional _arg)
   "Move to next entry of same depth.
 This function is intended to be used by `hs-minor-mode'.  Don't use it
 for anything else.
@@ -693,7 +698,7 @@ ARG is ignored."
 
 (defvar imenu-list--timer nil)
 
-(defcustom imenu-list-idle-update-delay idle-update-delay
+(defcustom imenu-list-idle-update-delay which-func-update-delay
   "Idle time delay before automatically updating the imenu-list buffer."
   :group 'imenu-list
   :type 'number
