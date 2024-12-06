@@ -122,7 +122,7 @@ buffer positions.  `imenu-list-custom-position-translator' should be a
 function that returns a position-translator function suitable for the
 current buffer, or nil.  See `imenu-list-position-translator' for details."
   :group 'imenu-list
-  :type 'function)
+  :type '(choice (function) (const nil)))
 
 (defface imenu-list-entry-face
   '((t))
